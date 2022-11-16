@@ -103,7 +103,8 @@ const Contact = () => {
           <Button type="primary" onClick={showModal}>
             Add Contact
           </Button>
-          <UploadFile />
+          <UploadFile placeholder={'Click for bulk upload'} />
+          <UploadFile placeholder={'Click for bulk update'} />
         </div>
         <div className="">
           <Search

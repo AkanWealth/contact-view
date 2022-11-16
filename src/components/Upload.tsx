@@ -3,12 +3,12 @@ import type { UploadProps } from 'antd';
 import { Button, message, Upload } from 'antd';
 import React from 'react';
 
-// interface Iprops {
-//   clickUpload: () => void;
-// }
+interface IProps {
+  placeholder: string
+}
 const props: UploadProps = {
   name: 'file',
-  action: 'http://localhost:3030/v1/contact/upload',
+  action: 'https://contacttask.herokuapp.com/v1/contact/upload',
   headers: {
     authorization: 'authorization-text',
   },
@@ -24,9 +24,9 @@ const props: UploadProps = {
   },
 };
 
-const UploadFile: React.FC = () => (
+const UploadFile = ({placeholder}:IProps) => (
   <Upload {...props}>
-    <Button icon={<UploadOutlined />}>Click to Upload</Button>
+    <Button className="text-white hover:bg-[#1890ff] hover:text-white" icon={<UploadOutlined />}>{placeholder}</Button>
     {/* <Button onClick={click}>Upload</Button> */}
   </Upload>
 );

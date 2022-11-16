@@ -5,7 +5,7 @@ interface Iinstance {
   }
 
 export const instance = ({ file }: Iinstance) => axios.create({
-    baseURL: 'http://localhost:3030/v1',
+    baseURL: 'https://contacttask.herokuapp.com/v1',
     timeout: 50000,
     headers: {
         "Content-Type": file ? "multipart/form-data" : "application/json",
