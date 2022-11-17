@@ -6,6 +6,10 @@ interface IAddContact {
   contactId?:string
 }
 
+// interface IDelete {
+//   phoneNumbers: string[];
+// }
+
 
 export const getContacts = async () => {
   const { data } = await instance({ file: false })
@@ -41,6 +45,13 @@ export const updateContact = async ({contactId, contactName, phoneNumber}: IAddC
 export const deleteContact = async (contactId: string) => {
   const { data } = await instance({ file: false })
     .delete(`/contact/${contactId}`)
+    .catch((e) => next(e));
+  return data?.data;
+}
+
+export const deleteBulk = async(phoneNumbers: string[]) => {
+  const { data } = await instance({ file: false })
+    .delete(`/contact`, {data: {phoneNumbers}})
     .catch((e) => next(e));
   return data?.data;
 }

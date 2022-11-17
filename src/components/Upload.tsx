@@ -9,6 +9,7 @@ interface IProps {
 const props: UploadProps = {
   name: 'file',
   action: 'https://contacttask.herokuapp.com/v1/contact/upload',
+  // action: 'http://localhost:3030/v1/contact/upload',
   headers: {
     authorization: 'authorization-text',
   },

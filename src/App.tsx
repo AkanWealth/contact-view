@@ -4,19 +4,21 @@ import { IContact } from './types';
 import { FormEvent, useState } from 'react';
 import UploadFile from './components/Upload';
 import ContactList from './components/Filter';
-import { Button, Input, Modal, Form } from 'antd';
-import { addContact, deleteContact, getSingleContact, updateContact } from './server/service';
+import { Button, Input, Modal, Form, Select } from 'antd';
+import { addContact, deleteBulk, getContacts, getSingleContact, updateContact } from './server/service';
 import {
   QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
-  useQueryClient
+  useQueryClient,
 } from 'react-query';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const { Search } = Input;
+
+const { Option } = Select;
 
 const queryClient = new QueryClient();
 
@@ -33,20 +35,26 @@ const Contact = () => {
   const [contactId, setContactId] = useState('');
   const [inputText, setInputText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<string[]>([])
+  const [isShowDeleteModal, setIsShowDeleteModal] = useState(false);
   const [isModalOpenUpdate, setIsModalOpenUpdate] = useState(false);
 
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery(
     ['singleContact', contactId],
     () => getSingleContact(contactId),
     { enabled: !!contactId }
   );
-  data && console.log('com', data?.contact?.contactName);
+  const { data:allContact, isLoading:allContactLoading } = useQuery('contacts', getContacts);
 
   const { mutate, isLoading: uploadLoading } = useMutation(addContact);
 
-  const { mutate:UpdateMutate, isLoading: updateLoading } = useMutation(updateContact);
+  const { mutate: UpdateMutate, isLoading: updateLoading } =
+    useMutation(updateContact);
+
+  const { mutate: deleteMutate, isLoading: deleteLoading } =
+    useMutation(deleteBulk);
 
   const onSearch = (value: string) => {
     setInputText(value);
@@ -55,36 +63,49 @@ const Contact = () => {
   const showModal = () => {
     setIsModalOpen(true);
   };
+  const showDeleteModal = () => {
+    setIsShowDeleteModal(true);
+  };
 
   const handleOk = () => {
+    deleteMutate(selectedContact, {
+      onSuccess: () => {
+        queryClient.invalidateQueries('contacts');
+      },
+    }),
     setIsModalOpen(false);
     setIsModalOpenUpdate(false);
+    setIsShowDeleteModal(false)
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
     setIsModalOpenUpdate(false);
+    setIsShowDeleteModal(false)
   };
 
   const onFinish = (values: IContact) => {
-    console.log('Success:', values);
-    mutate(values);
+    mutate(values, {
+      onSuccess: () => {
+        queryClient.invalidateQueries('contacts');
+        window.location.reload()
+      },
+    });
   };
 
   const onUpdate = (e: any) => {
     const payload = {
-      contactName: e.target["contactName"].value,
-      phoneNumber: e.target["phoneNumber"].value,
-      contactId
-    }
-    console.log(payload)
+      contactName: e.target['contactName'].value,
+      phoneNumber: e.target['phoneNumber'].value,
+      contactId,
+    };
     UpdateMutate(payload, {
-      onSuccess: () =>{
-        queryClient.invalidateQueries("contacts")
+      onSuccess: () => {
+        queryClient.invalidateQueries('contacts');
       },
-    })
-    setIsModalOpenUpdate(false)
-  }
+    });
+    setIsModalOpenUpdate(false);
+  };
 
   const onFinishFailed = (errorInfo: any) => {
     console.log('Failed:', errorInfo);
@@ -93,6 +114,12 @@ const Contact = () => {
   const openUpdate = (id: string) => {
     setContactId(id);
     setIsModalOpenUpdate(true);
+  };
+
+  const handleChange = (value: string) => {
+    console.log(`selected ${value}`);
+    setSelectedContact(prev => [...prev, value])
+    
   };
 
   return (
@@ -105,6 +132,7 @@ const Contact = () => {
           </Button>
           <UploadFile placeholder={'Click for bulk upload'} />
           <UploadFile placeholder={'Click for bulk update'} />
+          <Button type="ghost" onClick={showDeleteModal} className="text-white">Click to delete in bulk</Button>
         </div>
         <div className="">
           <Search
@@ -156,6 +184,33 @@ const Contact = () => {
           </Form.Item>
         </Form>
       </Modal>
+      {/* Bulk delete */}
+      {isShowDeleteModal ? (
+        <Modal
+          title="Delete Contacts"
+          open={isShowDeleteModal}
+          onOk={handleOk}
+          onCancel={handleCancel}
+        >
+          <Select
+            mode="multiple"
+            style={{ width: '100%' }}
+            placeholder="Select contacts"
+            // defaultValue={['']}
+            onChange={handleChange}
+            optionLabelProp="label"
+          >
+            {allContact?.data?.map((contact: any) => (
+              // <option value={option.value}>{option.label}</option>
+            <Option value={contact.phoneNumber} label={contact.phoneNumber}>
+              <div className="demo-option-label-item">
+                {contact.contactName} {contact.phoneNumber}
+              </div>
+            </Option>
+            ))}
+          </Select>
+        </Modal>
+      ) : null}
       {/* Update Contact */}
       {isModalOpenUpdate ? (
         <Modal
@@ -167,10 +222,11 @@ const Contact = () => {
           <form autoComplete="off" onSubmit={onUpdate}>
             <div className="flex justify-center gap-8">
               <input
-              name="contactName"
-               defaultValue={data?.contact?.contactName} />
+                name="contactName"
+                defaultValue={data?.contact?.contactName}
+              />
               <input
-              name="phoneNumber"
+                name="phoneNumber"
                 defaultValue={data?.contact?.phoneNumber}
                 className="border-spacing-x-8 border-cyan-500"
               />
