@@ -10,6 +10,7 @@ export const instance = ({ file }: Iinstance) => axios.create({
     headers: {
         "Content-Type": file ? "multipart/form-data" : "application/json",
         Accept: 'application/json',
+        'Access-Control-Allow-Origin': '*',
     }
 });
 
